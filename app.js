@@ -57,14 +57,14 @@ app.get("/", (req, res) => {
       slides.forEach((slide) => {
         slidesArray.push(slide.toJSON());
       });
+
+      res.render('slides/index', {
+        slides: slidesArray
+      });
     })
     .catch((error) => {
       console.error('Error getting slides:', error);
     });
-
-  res.render('slides/index', {
-    slides: slidesArray
-  });
 })
 
 app.get("/slides/new", (req, res) => {
