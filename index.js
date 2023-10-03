@@ -1,60 +1,15 @@
 const express = require('express');
 const multer = require("multer");
-
-const app = express();
-const port = 3000;
-
-app.get("/", (req, res) => {
-  res.sendFile(__dirname + "/index.html");
-});
-
-app.listen(port, () => console.log(`slides-app listening on port ${port}!`));
-
-const handleError = (err, res) => {
-  res
-    .status(500)
-    .contentType("text/plain")
-    .end("Oops! Something went wrong!");
-};
-
-const upload = multer({
-  dest: "/public/images"
-});
-
-app.post(
-  "/upload",
-  upload.single("file"),
-  (req, res) => {
-    const tempPath = req.file.path;
-    const targetPath = path.join(__dirname, "/public/images/image.jpg");
-
-    if (path.extname(req.file.originalname).toLowerCase() === ".jpg") {
-      fs.rename(tempPath, targetPath, err => {
-        if (err) return handleError(err, res);
-
-        res
-          .status(200)
-          .contentType("text/plain")
-          .end("File uploaded!");
-      });
-    } else {
-      fs.unlink(tempPath, err => {
-        if (err) return handleError(err, res);
-
-        res
-          .status(403)
-          .contentType("text/plain")
-          .end("Only .webp files are allowed!");
-      });
-    }
-  }
-);
-
+const path = require('path');
 const Sequelize = require('sequelize');
+const bodyParser = require('body-parser');
+
 const sequelize = new Sequelize({
   dialect: 'sqlite',
   storage: './database.sqlite'
 });
+const app = express();
+const port = 3000;
 
 sequelize
   .authenticate()
@@ -64,6 +19,20 @@ sequelize
   .catch(err => {
     console.error('Unable to connect to the database:', err);
   });
+
+sequelize.sync({ force: true })
+  .then(() => {
+    console.log(`Database & tables created!`);
+  });
+
+
+app.get("/", (req, res) => {
+  res.sendFile(__dirname + "/index.html");
+});
+
+app.listen(port, () => console.log(`slides-app listening on port ${port}!`));
+app.use(express.static('public'));
+app.use(bodyParser.json());
 
 const Slide = sequelize.define('slides', {
   title: Sequelize.STRING,
@@ -77,7 +46,58 @@ const Slide = sequelize.define('slides', {
   unpublishingDate: Sequelize.DATE
 });
 
-sequelize.sync({ force: true })
-  .then(() => {
-    console.log(`Database & tables created!`);
-  });
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'public/images');
+  },
+  filename: (req, file, cb) => {
+    const extension = path.extname(file.originalname);
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + extension);
+  },
+});
+
+const upload = multer({ storage: storage });
+
+app.get('/slides', (req, res) => {
+
+  Slide.findAll()
+    .then((slides) => {
+      console.log('Slides:', slides);
+      //res.send(slides);
+    })
+    .catch((error) => {
+      console.error('Error getting slides:', error);
+    });
+});
+
+app.post('/upload', upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).send('No file uploaded.');
+  } else {
+    const { filename, size } = req.file;
+
+    Slide.create({
+      title: req.body.title,
+      content: req.body.content,
+      image: filename,
+      type: req.body.type,
+      color: req.body.color, // Replace with the desired color value
+      published: true,
+      order: 1,
+      publishingDate: new Date(),
+      unpublishingDate: req.body.unpublishingDate, // Set to null or specify a date
+    })
+      .then((newSlide) => {
+        //console.log('New Slide created:', newSlide.get({ plain: true }));
+
+
+        res.send(`Slide created`);
+      })
+      .catch((error) => {
+        console.error('Error creating Slide:', error);
+      });
+  }
+});
+
+
