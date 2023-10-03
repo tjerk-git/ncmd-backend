@@ -1,8 +1,9 @@
-const express = require('express');
-const multer = require("multer");
-const path = require('path');
-const Sequelize = require('sequelize');
-const bodyParser = require('body-parser');
+import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import { Sequelize } from 'sequelize';
+import bodyParser from 'body-parser';
+import { engine } from 'express-handlebars';
 
 const sequelize = new Sequelize({
   dialect: 'sqlite',
@@ -10,6 +11,14 @@ const sequelize = new Sequelize({
 });
 const app = express();
 const port = 3000;
+
+app.engine('handlebars', engine());
+app.set('view engine', 'handlebars');
+app.set('views', './views');
+app.use(express.static('public'));
+app.use(bodyParser.json());
+
+app.listen(port, () => console.log(`slides-app listening on port ${port}!`));
 
 sequelize
   .authenticate()
@@ -19,20 +28,6 @@ sequelize
   .catch(err => {
     console.error('Unable to connect to the database:', err);
   });
-
-sequelize.sync({ force: true })
-  .then(() => {
-    console.log(`Database & tables created!`);
-  });
-
-
-app.get("/", (req, res) => {
-  res.sendFile(__dirname + "/index.html");
-});
-
-app.listen(port, () => console.log(`slides-app listening on port ${port}!`));
-app.use(express.static('public'));
-app.use(bodyParser.json());
 
 const Slide = sequelize.define('slides', {
   title: Sequelize.STRING,
@@ -45,6 +40,39 @@ const Slide = sequelize.define('slides', {
   publishingDate: Sequelize.DATE,
   unpublishingDate: Sequelize.DATE
 });
+
+// only at first time setup
+// sequelize.sync({})
+//   .then(() => {
+//     console.log(`Database & tables created!`);
+//   });
+
+app.get("/", (req, res) => {
+  let slidesArray = [];
+
+  // Find all slides and populate the slidesArray
+  Slide.findAll()
+    .then((slides) => {
+      // Loop through the slides and push them into the slidesArray
+      slides.forEach((slide) => {
+        slidesArray.push(slide.toJSON());
+      });
+    })
+    .catch((error) => {
+      console.error('Error getting slides:', error);
+    });
+
+  res.render('slides/index', {
+    slides: slidesArray
+  });
+})
+
+app.get("/slides/new", (req, res) => {
+  res.render('slides/new');
+});
+
+
+
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -59,17 +87,10 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-app.get('/slides', (req, res) => {
+// app.get('/api/slides', (req, res) => {
 
-  Slide.findAll()
-    .then((slides) => {
-      console.log('Slides:', slides);
-      //res.send(slides);
-    })
-    .catch((error) => {
-      console.error('Error getting slides:', error);
-    });
-});
+
+// });
 
 app.post('/upload', upload.single('file'), (req, res) => {
   if (!req.file) {
@@ -90,7 +111,6 @@ app.post('/upload', upload.single('file'), (req, res) => {
     })
       .then((newSlide) => {
         //console.log('New Slide created:', newSlide.get({ plain: true }));
-
 
         res.send(`Slide created`);
       })
