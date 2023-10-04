@@ -16,6 +16,7 @@ app.engine('handlebars', engine());
 app.set('view engine', 'handlebars');
 app.set('views', './views');
 app.use(express.static('/public'));
+app.use(express.static('/public/images'));
 app.use(bodyParser.json());
 
 app.listen(port, () => console.log(`slides-app listening on port ${port}!`));
@@ -41,11 +42,6 @@ const Slide = sequelize.define('slides', {
   unpublishingDate: Sequelize.DATE
 });
 
-// only at first time setup
-// sequelize.sync({})
-//   .then(() => {
-//     console.log(`Database & tables created!`);
-//   });
 
 app.get("/", (req, res) => {
   let slidesArray = [];
@@ -70,8 +66,6 @@ app.get("/", (req, res) => {
 app.get("/slides/new", (req, res) => {
   res.render('slides/new');
 });
-
-
 
 
 const storage = multer.diskStorage({
