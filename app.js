@@ -12,11 +12,11 @@ const sequelize = new Sequelize({
 const app = express();
 const port = 3000;
 
+app.use(express.static('public'))
+
 app.engine('handlebars', engine());
 app.set('view engine', 'handlebars');
 app.set('views', './views');
-app.use(express.static('/public'));
-app.use(express.static('/public/images'));
 app.use(bodyParser.json());
 
 app.listen(port, () => console.log(`slides-app listening on port ${port}!`));
