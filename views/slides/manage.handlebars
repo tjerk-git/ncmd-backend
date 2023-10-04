@@ -1,0 +1,73 @@
+<div id="slide-container">
+  {{#each slides}}
+  <div class="slide" draggable="true"><img src="../images/{{this.image}}" alt="{{this.image}}"></div>
+  {{/each}}
+</div>
+<style>
+  #slide-container {
+    display: flex;
+    flex-wrap: wrap;
+    max-width: 980px;
+    justify-content: center;
+    margin: 0 auto;
+  }
+
+  .slide {
+    width: 100%;
+    height: 100px;
+    background-color: #3498db;
+    color: white;
+    margin: 10px;
+    text-align: center;
+    line-height: 100px;
+    cursor: pointer;
+  }
+
+  .slide img {
+    width: 50px;
+    height: 50px;
+  }
+</style>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  let draggedSlide = null;
+
+  slides.forEach(slide => {
+    slide.addEventListener('dragstart', () => {
+      draggedSlide = slide;
+      setTimeout(() => {
+        slide.style.display = 'none';
+      }, 0);
+    });
+
+    slide.addEventListener('dragend', () => {
+      setTimeout(() => {
+        slide.style.display = 'block';
+        draggedSlide = null;
+      }, 0);
+    });
+
+    slide.addEventListener('dragover', (e) => {
+      e.preventDefault();
+    });
+
+    slide.addEventListener('dragenter', (e) => {
+      e.preventDefault();
+      slide.style.backgroundColor = 'rgba(52, 152, 219, 0.7)';
+    });
+
+    slide.addEventListener('dragleave', () => {
+      slide.style.backgroundColor = '#3498db';
+    });
+
+    slide.addEventListener('drop', () => {
+      slide.style.backgroundColor = '#3498db';
+      if (draggedSlide !== null) {
+        const temp = slide.innerHTML;
+        slide.innerHTML = draggedSlide.innerHTML;
+        draggedSlide.innerHTML = temp;
+      }
+    });
+  });
+</script>

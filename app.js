@@ -63,6 +63,24 @@ app.get("/", (req, res) => {
     });
 })
 
+app.get("/slides/manage", (req, res) => {
+  let slidesArray = [];
+
+  Slide.findAll()
+    .then((slides) => {
+      slides.forEach((slide) => {
+        slidesArray.push(slide.toJSON());
+      });
+
+      res.render('slides/manage', {
+        slides: slidesArray
+      });
+    })
+    .catch((error) => {
+      console.error('Error getting slides:', error);
+    });
+})
+
 app.get("/slides/new", (req, res) => {
   res.render('slides/new');
 });
