@@ -15,7 +15,7 @@ const port = 3000;
 app.engine('handlebars', engine());
 app.set('view engine', 'handlebars');
 app.set('views', './views');
-app.use(express.static('public'));
+app.use(express.static('/public'));
 app.use(bodyParser.json());
 
 app.listen(port, () => console.log(`slides-app listening on port ${port}!`));
@@ -96,18 +96,19 @@ app.post('/upload', upload.single('file'), (req, res) => {
   if (!req.file) {
     return res.status(400).send('No file uploaded.');
   } else {
-    const { filename, size } = req.file;
+    const { filename } = req.file;
+    const { title, content, type, color, unpublishingDate } = req.body;
 
     Slide.create({
-      title: req.body.title,
-      content: req.body.content,
+      title: title,
+      content: content,
       image: filename,
-      type: req.body.type,
-      color: req.body.color, // Replace with the desired color value
+      type: type,
+      color: color,
       published: true,
       order: 1,
       publishingDate: new Date(),
-      unpublishingDate: req.body.unpublishingDate, // Set to null or specify a date
+      unpublishingDate: unpublishingDate,
     })
       .then((newSlide) => {
         //console.log('New Slide created:', newSlide.get({ plain: true }));
